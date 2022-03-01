@@ -80,20 +80,38 @@ function todoListRouter(req,res) {
     } else if(method === 'PATCH') {
         try {
             req.on('end',()=>{
-                const title = JSON.parse(body).title;
-                const id = req.url.split('/').pop();
-                const index = todoList.findIndex(element => element.id === id);
-                if(index !== -1 && title !== undefined) {
-                    todoList[index].title = title;
-                    res.writeHead(httpStatus.OK,headers);
-                    res.write(JSON.stringify({
-                        "status": httpStatus.getStatusMessage(httpStatus.OK),
-                        "data" : todoList
-                    }));
-                    res.end();
-                } else {
+                try{
+                    const title = JSON.parse(body).title;
+                    if(title !== undefined){ // title不為undefined才繼續往下做
+
+                        const urlArrLength = req.url.split('/').length;
+                        if(urlArrLength === 3){ //正確的路徑 EX: /todos/uuid
+                            const id = req.url.split('/').pop();
+                            const index = todoList.findIndex(element => element.id === id);
+                            if(index !== -1){
+                                todoList[index].title = title;
+                                res.writeHead(httpStatus.OK,headers);
+                                res.write(JSON.stringify({
+                                    "status": httpStatus.getStatusMessage(httpStatus.OK),
+                                    "data" : todoList
+                                }));
+                                res.end();
+                            }else {
+                                errorHandler(res,httpStatus.BAD_REQUEST);
+                            }
+
+                        }else if(urlArrLength > 3 || urlArrLength < 3) { // 避免錯誤的路徑依舊能修改  EX:  /todos/abc/uuid  or  /todos 
+                            errorHandler(res,httpStatus.BAD_REQUEST);
+                        }
+                        
+                    }else{ 
+                        errorHandler(res,httpStatus.BAD_REQUEST);
+                    }
+                    
+                }catch{
                     errorHandler(res,httpStatus.BAD_REQUEST);
                 }
+                
             })
             
         }catch {
